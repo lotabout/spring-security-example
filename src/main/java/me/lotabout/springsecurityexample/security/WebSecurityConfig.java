@@ -3,10 +3,8 @@ package me.lotabout.springsecurityexample.security;
 import me.lotabout.springsecurityexample.common.util.PasswordUtil;
 import me.lotabout.springsecurityexample.user.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -43,6 +41,7 @@ public class WebSecurityConfig {
     @Configuration
     @Order(1)
     class PredictorSecurityConfig extends WebSecurityConfigurerAdapter {
+
         @Override
         protected void configure(AuthenticationManagerBuilder auth) throws Exception {
             auth.authenticationProvider(new TokenAuthenticationProvider(tokenService));
@@ -72,10 +71,8 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-            provider.setPasswordEncoder(PasswordUtil.getEncoder());
-            provider.setUserDetailsService(customUserDetailService);
-            auth.authenticationProvider(provider);
+            auth.userDetailsService(customUserDetailService)
+                    .passwordEncoder(PasswordUtil.getEncoder());
         }
 
         @Override
@@ -87,7 +84,8 @@ public class WebSecurityConfig {
         protected void configure(HttpSecurity http) throws Exception {
             http
                     .addFilterAfter(new CsrfTokenResponseHeaderBindingFilter(), CsrfFilter.class)
-                    .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(authenticationFilter(),
+                            UsernamePasswordAuthenticationFilter.class)
                     .exceptionHandling()
                     .authenticationEntryPoint(new RestAuthenticationEntryPoint())
                     .and()
@@ -123,20 +121,6 @@ public class WebSecurityConfig {
             filter.setAuthenticationFailureHandler(new AjaxAuthenticationFailureHandler());
             filter.setFilterProcessesUrl(LOGIN_URL);
             return filter;
-        }
-    }
-
-    /**
-     * Disable all security if {@code lw_model.security.disabled: true}
-     */
-    @Configuration
-    @Order(0)
-    @ConditionalOnProperty(value = "lw_model.security.disabled", havingValue = "true")
-    class NoSecurity extends WebSecurityConfigurerAdapter {
-
-        @Override
-        public void configure(WebSecurity web) {
-            web.ignoring().anyRequest();
         }
     }
 }
