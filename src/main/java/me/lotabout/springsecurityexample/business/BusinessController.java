@@ -14,7 +14,7 @@ public class BusinessController {
         return Response.ok(value * value);
     }
 
-    @PostMapping("/api/v1/triple/{user}/{hash}/{value}")
+    @PostMapping("/api/v1/triple/{user}/{value}")
     public Response<Long> triple(@PathVariable long value) {
         return Response.ok(3 * value);
     }

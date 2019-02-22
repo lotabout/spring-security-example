@@ -32,7 +32,6 @@ public class WebSecurityConfig {
     private static final String LOGOUT_URL = "/api/v1/user/logout";
 
     private static final String PATTERN_SQUARE = "/api/v1/square/**";
-    private static final String PATTERN_TRIPLE = "/api/v1/triple/**";
     private static final String PATTERN_ADMIN = "/api/v1/admin";
     private static final String PATTERN_IGNORE = "/api/v1/ignore";
 
@@ -75,11 +74,18 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
+            // 0. will use anonymous for authentication
+            // 1. need to disable CSRF, authorization happens after authentication
+            // 2. specify authorization by `access` method
+            // 3. `@pathValidator` to refer to bean pathValidator
+            // 4. `#user` to refer to path variable
+            // 5. `request.getParameter` to refer to request parameter
+
             http
-                    .antMatcher(PATTERN_TRIPLE)
+                    .antMatcher("/api/v1/triple/**")
                     .authorizeRequests()
-                    .antMatchers("/api/v1/triple/{user}/{hash}/**")
-                    .access("@pathValidator.ensureHash(#user, #hash)")
+                    .antMatchers("/api/v1/triple/{user}/**")
+                    .access("@pathValidator.ensureHash(authentication, #user, request.getParameter(\"hash\"))")
                     .and()
                     .csrf()
                     .disable() // need to disable csrf
