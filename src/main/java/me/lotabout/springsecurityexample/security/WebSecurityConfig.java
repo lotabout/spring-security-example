@@ -32,6 +32,7 @@ public class WebSecurityConfig {
     private static final String LOGOUT_URL = "/api/v1/user/logout";
 
     private static final String PATTERN_SQUARE = "/api/v1/square/**";
+    private static final String PATTERN_TRIPLE = "/api/v1/triple/**";
     private static final String PATTERN_ADMIN = "/api/v1/admin";
     private static final String PATTERN_IGNORE = "/api/v1/ignore";
 
@@ -65,8 +66,30 @@ public class WebSecurityConfig {
         }
     }
 
+    /**
+     * Authentication based on parameter URLs
+     */
     @Configuration
     @Order(2)
+    class PathTokenSecurityConfig extends WebSecurityConfigurerAdapter {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                    .antMatcher(PATTERN_TRIPLE)
+                    .authorizeRequests()
+                    .antMatchers("/api/v1/triple/{user}/{hash}/**")
+                    .access("@pathValidator.ensureHash(#user, #hash)")
+                    .and()
+                    .csrf()
+                    .disable() // need to disable csrf
+                    .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        }
+    }
+
+    @Configuration
+    @Order(3)
     class ApiSecurityConfig extends WebSecurityConfigurerAdapter {
 
         @Override
@@ -89,8 +112,6 @@ public class WebSecurityConfig {
                     .exceptionHandling()
                     .authenticationEntryPoint(new RestAuthenticationEntryPoint())
                     .and()
-                    .anonymous()
-                    .disable()
                     .authorizeRequests()
                     .antMatchers(PATTERN_ADMIN).hasRole("ADMIN")
                     .antMatchers("/**").hasRole("USER")
